@@ -1,0 +1,115 @@
+version: "3.7"
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 1000m
+
+# Environment variable definitions
+x-test-running-conditions: &test_running_conditions
+  NUM_MESSAGES: ${NUM_MESSAGES:-120}
+  DELAY_MESSAGES: "${DELAY_MESSAGES:-1000}"
+  PUBSUB: ${PUBSUB:-/waku/2/rs/66/0}
+  CONTENT_TOPIC: ${CONTENT_TOPIC:-/tester/2/light-pubsub-test/wakusim}
+  CLUSTER_ID: ${CLUSTER_ID:-66}
+  MIN_MESSAGE_SIZE: ${MIN_MESSAGE_SIZE:-1Kb}
+  MAX_MESSAGE_SIZE: ${MAX_MESSAGE_SIZE:-150Kb}
+  START_PUBLISHING_AFTER: ${START_PUBLISHING_AFTER:-60}  # seconds
+  NUM_PUBLISHER_NODES: ${NUM_PUBLISHER_NODES:-1}
+  NUM_RECEIVER_NODES: ${NUM_RECEIVER_NODES:-1}
+  LIGHTPUSH_SERVICE_PEER: ${LIGHTPUSH_SERVICE_PEER:-}
+  LIGHTPUSH_BOOTSTRAP: ${LIGHTPUSH_BOOTSTRAP:-}
+  FILTER_SERVICE_PEER: ${FILTER_SERVICE_PEER:-}
+  FILTER_BOOTSTRAP: ${FILTER_BOOTSTRAP:-}
+
+
+# Services definitions
+services:
+  publishernode:
+    image: ${LPT_IMAGE:-harbor.status.im/wakuorg/liteprotocoltester:latest}
+    deploy:
+      replicas: ${NUM_PUBLISHER_NODES:-1}
+    # ports:
+      # - 30304:30304/tcp
+      # - 30304:30304/udp
+      # - 9005:9005/udp
+      # - 127.0.0.1:8003:8003
+      # - 80:80 #Let's Encrypt
+      # - 8000:8000/tcp #WSS
+      # - 127.0.0.1:8646:8646
+    <<:
+      - *logging
+    environment:
+      DOMAIN: ${DOMAIN:-}
+      <<:
+        - *test_running_conditions
+    volumes:
+      - ./run_tester_node.sh:/opt/run_tester_node.sh:Z
+    entrypoint: sh
+    command:
+      - /opt/run_tester_node.sh
+      - /usr/bin/liteprotocoltester
+      - SENDER
+      
+  receivernode:
+    image: ${LPT_IMAGE:-harbor.status.im/wakuorg/liteprotocoltester:latest}
+    deploy:
+      replicas: ${NUM_RECEIVER_NODES:-1}
+    # ports:
+      # - 30304:30304/tcp
+      # - 30304:30304/udp
+      # - 9005:9005/udp
+      # - 127.0.0.1:8003:8003
+      # - 80:80 #Let's Encrypt
+      # - 8000:8000/tcp #WSS
+      # - 127.0.0.1:8647:8647
+    <<:
+      - *logging
+    environment:
+      DOMAIN: ${DOMAIN:-}
+      <<:
+        - *test_running_conditions
+    volumes:
+      - ./run_tester_node.sh:/opt/run_tester_node.sh:Z
+    entrypoint: sh
+    command:
+      - /opt/run_tester_node.sh
+      - /usr/bin/liteprotocoltester
+      - RECEIVER
+    depends_on:
+      - publishernode
+        
+  # We have prometheus and grafana defined in waku-simulator already
+  prometheus:
+    image: docker.io/prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus-config.yml:/etc/prometheus/prometheus.yml:Z
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.listen-address=:9099
+    # ports:
+    #   - 127.0.0.1:9090:9090
+    restart: on-failure:3
+    depends_on:
+      - publishernode
+      - receivernode
+
+  grafana:
+    image: docker.io/grafana/grafana:latest
+    env_file:
+      - ./monitoring/configuration/grafana-plugins.env
+    volumes:
+      - ./monitoring/configuration/grafana.ini:/etc/grafana/grafana.ini:Z
+      - ./monitoring/configuration/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:Z
+      - ./monitoring/configuration/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:Z
+      - ./monitoring/configuration/dashboards:/var/lib/grafana/dashboards/:Z
+      - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_icon.svg:Z
+      - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_typelogo.svg:Z
+      - ./monitoring/configuration/customizations/custom-logo.png:/usr/share/grafana/public/img/fav32.png:Z
+    ports:
+      - 0.0.0.0:3033:3033
+    restart: on-failure:3
+    depends_on:
+      - prometheus
+
+
