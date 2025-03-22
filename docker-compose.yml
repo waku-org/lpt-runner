@@ -40,6 +40,8 @@ services:
       - /usr/bin/run_tester_node_on_fleet.sh
       - /usr/bin/liteprotocoltester
       - SENDER
+    networks:
+      - waku-simulator_simulation
       
   receivernode:
     image: ${LPT_IMAGE:-harbor.status.im/wakuorg/liteprotocoltester:latest}
@@ -58,6 +60,8 @@ services:
       - RECEIVER
     depends_on:
       - publishernode
+    networks:
+      - waku-simulator_simulation
         
   # We have prometheus and grafana defined in waku-simulator already
   prometheus:
@@ -71,6 +75,8 @@ services:
     depends_on:
       - publishernode
       - receivernode
+    networks:
+      - waku-simulator_simulation
 
   grafana:
     image: docker.io/grafana/grafana:latest
@@ -89,5 +95,9 @@ services:
     restart: on-failure:3
     depends_on:
       - prometheus
+    networks:
+      - waku-simulator_simulation
 
-
+networks:
+    waku-simulator_simulation:
+      external: true
