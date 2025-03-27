@@ -27,6 +27,7 @@ x-test-running-conditions: &test_running_conditions
 services:
   publishernode:
     image: ${LPT_IMAGE:-harbor.status.im/wakuorg/liteprotocoltester:latest}
+    # container_name: publishernode
     deploy:
       replicas: ${NUM_PUBLISHER_NODES:-1}
     <<:
@@ -41,10 +42,11 @@ services:
       - /usr/bin/liteprotocoltester
       - SENDER
     networks:
-      - waku-simulator_simulation
+      - simulation
       
   receivernode:
     image: ${LPT_IMAGE:-harbor.status.im/wakuorg/liteprotocoltester:latest}
+    # container_name: receivernode
     deploy:
       replicas: ${NUM_RECEIVER_NODES:-1}
     <<:
@@ -61,7 +63,7 @@ services:
     depends_on:
       - publishernode
     networks:
-      - waku-simulator_simulation
+      - simulation
         
   # We have prometheus and grafana defined in waku-simulator already
   prometheus:
@@ -76,7 +78,7 @@ services:
       - publishernode
       - receivernode
     networks:
-      - waku-simulator_simulation
+      - simulation
 
   grafana:
     image: docker.io/grafana/grafana:latest
@@ -96,8 +98,9 @@ services:
     depends_on:
       - prometheus
     networks:
-      - waku-simulator_simulation
+      - simulation
 
 networks:
-    waku-simulator_simulation:
-      external: true
+  simulation:
+    name: simulation
+    external: true
