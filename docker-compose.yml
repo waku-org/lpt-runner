@@ -8,7 +8,7 @@ x-logging: &logging
 # Environment variable definitions
 x-test-running-conditions: &test_running_conditions
   NUM_MESSAGES: ${NUM_MESSAGES:-120}
-  DELAY_MESSAGES: "${DELAY_MESSAGES:-1000}"
+  MESSAGE_INTERVAL_MILLIS: "${MESSAGE_INTERVAL_MILLIS:-1000}"
   PUBSUB: ${PUBSUB:-/waku/2/rs/66/0}
   CONTENT_TOPIC: ${CONTENT_TOPIC:-/tester/2/light-pubsub-test/wakusim}
   CLUSTER_ID: ${CLUSTER_ID:-66}
@@ -21,6 +21,7 @@ x-test-running-conditions: &test_running_conditions
   LIGHTPUSH_BOOTSTRAP: ${LIGHTPUSH_BOOTSTRAP:-}
   FILTER_SERVICE_PEER: ${FILTER_SERVICE_PEER:-}
   FILTER_BOOTSTRAP: ${FILTER_BOOTSTRAP:-}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
 
 # Services definitions
@@ -66,39 +67,39 @@ services:
       - simulation
         
   # We have prometheus and grafana defined in waku-simulator already
-  prometheus:
-    image: docker.io/prom/prometheus:latest
-    volumes:
-      - ./monitoring/prometheus-config.yml:/etc/prometheus/prometheus.yml:Z
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --web.listen-address=:9099
-    restart: on-failure:3
-    depends_on:
-      - publishernode
-      - receivernode
-    networks:
-      - simulation
+  # prometheus:
+  #   image: docker.io/prom/prometheus:latest
+  #   volumes:
+  #     - ./monitoring/prometheus-config.yml:/etc/prometheus/prometheus.yml:Z
+  #   command:
+  #     - --config.file=/etc/prometheus/prometheus.yml
+  #     - --web.listen-address=:9099
+  #   restart: on-failure:3
+  #   depends_on:
+  #     - publishernode
+  #     - receivernode
+  #   networks:
+  #     - simulation
 
-  grafana:
-    image: docker.io/grafana/grafana:latest
-    env_file:
-      - ./monitoring/configuration/grafana-plugins.env
-    volumes:
-      - ./monitoring/configuration/grafana.ini:/etc/grafana/grafana.ini:Z
-      - ./monitoring/configuration/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:Z
-      - ./monitoring/configuration/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:Z
-      - ./monitoring/configuration/dashboards:/var/lib/grafana/dashboards/:Z
-      - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_icon.svg:Z
-      - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_typelogo.svg:Z
-      - ./monitoring/configuration/customizations/custom-logo.png:/usr/share/grafana/public/img/fav32.png:Z
-    ports:
-      - 0.0.0.0:3033:3033
-    restart: on-failure:3
-    depends_on:
-      - prometheus
-    networks:
-      - simulation
+  # grafana:
+  #   image: docker.io/grafana/grafana:latest
+  #   env_file:
+  #     - ./monitoring/configuration/grafana-plugins.env
+  #   volumes:
+  #     - ./monitoring/configuration/grafana.ini:/etc/grafana/grafana.ini:Z
+  #     - ./monitoring/configuration/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:Z
+  #     - ./monitoring/configuration/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:Z
+  #     - ./monitoring/configuration/dashboards:/var/lib/grafana/dashboards/:Z
+  #     - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_icon.svg:Z
+  #     - ./monitoring/configuration/customizations/custom-logo.svg:/usr/share/grafana/public/img/grafana_typelogo.svg:Z
+  #     - ./monitoring/configuration/customizations/custom-logo.png:/usr/share/grafana/public/img/fav32.png:Z
+  #   ports:
+  #     - 0.0.0.0:3033:3033
+  #   restart: on-failure:3
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - simulation
 
 networks:
   simulation:

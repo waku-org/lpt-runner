@@ -39,7 +39,7 @@ Navigate to http://localhost:3033 to see the lite-protocol-tester dashboard.
 | NUM_PUBLISHER_NODES | Number of publisher node copies to run - this can extend stressful testing of the network | 1 |
 | NUM_RECEIVER_NODES | Number of receiver node copies to run - to widen reliability test of the network | 1 |
 | NUM_MESSAGES   | Number of message to publish, 0 means infinite | 120 |
-| DELAY_MESSAGES | Frequency of messages in milliseconds | 1000 |
+| MESSAGE_INTERVAL_MILLIS | Frequency of messages in milliseconds | 1000 |
 | PUBSUB | Used pubsub_topic for testing | /waku/2/rs/66/0 |
 | CONTENT_TOPIC  | content_topic for testing | /tester/1/light-pubsub-example/proto |
 | CLUSTER_ID  | cluster_id of the network | 16 |
